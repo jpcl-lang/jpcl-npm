@@ -1,0 +1,92 @@
+name: Publish
+
+# Publishes to npm with Trusted Publishing (OIDC) -- there are no npm tokens or
+# repository secrets to manage, and provenance is attached automatically.
+# See "Releasing" in CONTRIBUTING.md for the one-time npm setup this expects.
+#
+# Runs on a published GitHub Release, or manually to retry a failed upload.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  build:
+    name: Build package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type-check
+        run: bun run typecheck
+
+      - name: Run tests
+        run: bun test
+
+      - name: Verify the release tag matches the package version
+        if: github.event_name == 'release'
+        run: |
+          version=$(node -p "require('./package.json').version")
+          tag="${GITHUB_REF_NAME#v}"
+          echo "package.json: $version / tag: $tag"
+          if [ "$version" != "$tag" ]; then
+            echo "::error::package.json version ($version) does not match the release tag ($tag)"
+            exit 1
+          fi
+
+      # 'npm pack' runs the prepack script, which builds dist/.
+      - name: Pack the tarball
+        run: |
+          mkdir -p out
+          npm pack --pack-destination out
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: package
+          path: out/*.tgz
+          if-no-files-found: error
+
+  npm:
+    name: Publish to npm
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/jpml
+    permissions:
+      id-token: write   # mints the OIDC token npm trusts
+      contents: read
+      actions: read     # lets download-artifact fetch the build output
+
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm 11.5.1 or newer.
+      - name: Update npm
+        run: npm install -g npm@latest
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: package
+          path: out/
+
+      - name: Publish
+        run: npm publish out/*.tgz --access public

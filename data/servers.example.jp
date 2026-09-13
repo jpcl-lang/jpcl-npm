@@ -1,0 +1,30 @@
+# Template config -- copy to servers.jp and fill in.
+# Section names are Discord guild IDs; they stay strings when parsed.
+
+# Keys before the first [header] belong to the document root.
+version: 2
+
+[SERVER_ID]
+config: {
+  disabled_channels:,
+  disabled_users: [9892, 82082, 8209]
+}
+
+[SERVER_ID_2]
+prefix: "!"
+modules: {
+  moderation: true,
+  fun: false
+}
+
+[1234567890]
+prefix: "?"
+# An empty value means "set this later".
+log_channel:
+# Arrays wrap automatically once they outgrow the line.
+staff_roles: [111111111111111111, 222222222222222222, 333333333333333333]
+limits: {
+  # Nested objects may go as deep as you need.
+  rate: {per_minute: 30, burst: 5},
+  warn_threshold: 3
+}

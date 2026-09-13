@@ -1,0 +1,13 @@
+{
+  // Compiles src/ to dist/ for publishing. Only Node types are visible, so the
+  // package cannot accidentally depend on a Bun-only API.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "noEmit": false,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true
+  },
+  "include": ["src"]
+}

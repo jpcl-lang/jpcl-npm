@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type-check
+        run: bun run typecheck
+
+      - name: Run tests
+        run: bun test
+
+      - name: Build
+        run: bun run build
+
+      # Note: 'jpml fmt' is deliberately not enforced here -- rewriting a file
+      # drops its comments, so formatting stays a manual choice.
+      - name: Validate the bundled .jp files
+        shell: bash
+        run: bun dist/bin.js check data/*.jp
+
+  node:
+    name: node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22, 24]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      # The package ships for Node, so make sure the compiled output runs there.
+      - name: Smoke-test the built package under Node
+        run: |
+          node dist/bin.js --version
+          node dist/bin.js check data/*.jp
+          node dist/bin.js to-json data/servers.example.jp
+          node --input-type=module -e "
+            import { loadSync, dumps } from 'jpml';
+            import { loads } from 'jpml/core';
+            const data = loadSync('data/servers.example.jp');
+            if (JSON.stringify(loads(dumps(data)), (k, v) => typeof v === 'bigint' ? String(v) : v)
+                !== JSON.stringify(data, (k, v) => typeof v === 'bigint' ? String(v) : v)) process.exit(1);
+          "
