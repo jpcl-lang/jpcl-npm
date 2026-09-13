@@ -1,9 +1,9 @@
-# jpml
+# jpml-lang
 
 JavaScript/TypeScript package for JPML
 
 [![CI](https://github.com/jpml-lang/jpml-npm/actions/workflows/ci.yml/badge.svg)](https://github.com/jpml-lang/jpml-npm/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/jpml)](https://www.npmjs.com/package/jpml)
+[![npm](https://img.shields.io/npm/v/jpml-lang)](https://www.npmjs.com/package/jpml-lang)
 
 **A configuration language that borrows TOML's sections and JSON's nesting.**
 
@@ -27,7 +27,7 @@ modules: {
 ```
 
 ```ts
-import { load } from "jpml";
+import { load } from "jpml-lang";
 
 await load("data/servers.jp");
 // {
@@ -62,10 +62,13 @@ messages, and a deterministic writer, so files stay stable when a program
 rewrites them.
 
 ```bash
-npm install jpml     # or: bun add jpml / pnpm add jpml / yarn add jpml
+npm install jpml-lang     # or: bun add jpml-lang / pnpm add jpml-lang / yarn add jpml-lang
 ```
 
 No runtime dependencies. Ships ESM with TypeScript types. Node 20+, Bun and Deno.
+
+The package is published as `jpml-lang` (npm reserves names that look like
+existing packages), but the command it installs is still `jpml`.
 
 ---
 
@@ -157,7 +160,7 @@ objects and arrays.
 ### Read and write files
 
 ```ts
-import * as jpml from "jpml";
+import * as jpml from "jpml-lang";
 
 const data = await jpml.load("data/servers.jp");   // -> object
 await jpml.dump(data, "data/servers.jp");          // formatted, atomic write
@@ -204,7 +207,7 @@ get a `bigint` for every integer, or `integers: "number"` to always get a
 `JPConfig` is a map-like object that remembers the file it came from.
 
 ```ts
-import { JPConfig } from "jpml";
+import { JPConfig } from "jpml-lang";
 
 const cfg = await JPConfig.load("data/servers.jp", { missingOk: true });
 
@@ -263,22 +266,22 @@ By default a repeated key is an error rather than a silent overwrite; pass
 ### Work from the shell
 
 ```bash
-npx jpml check data/*.jp                      # validate; non-zero exit on failure
-npx jpml fmt -w data/servers.jp               # reformat in place
-npx jpml get data/servers.jp SERVER_ID.prefix # read one value
-npx jpml to-json data/servers.jp -o out.json
-npx jpml from-json out.json -o data/servers.jp
+npx jpml-lang check data/*.jp                      # validate; non-zero exit on failure
+npx jpml-lang fmt -w data/servers.jp               # reformat in place
+npx jpml-lang get data/servers.jp SERVER_ID.prefix # read one value
+npx jpml-lang to-json data/servers.jp -o out.json
+npx jpml-lang from-json out.json -o data/servers.jp
 ```
 
 `-` reads stdin. Large integers survive `to-json` and `from-json` intact.
 
 ### In the browser
 
-`jpml/core` is the same parser and writer without any filesystem access, for
+`jpml-lang/core` is the same parser and writer without any filesystem access, for
 browsers, workers and edge runtimes:
 
 ```ts
-import { loads, dumps, JPDecodeError } from "jpml/core";
+import { loads, dumps, JPDecodeError } from "jpml-lang/core";
 ```
 
 ---
@@ -343,7 +346,7 @@ A few habits that save pain later:
    `"1234567890"`, which is how JavaScript stores object keys anyway.
 4. **Write through `JPConfig.save()`** rather than by hand, so an interrupted
    write cannot truncate a live config.
-5. **Validate in CI** with `npx jpml check data/*.jp`.
+5. **Validate in CI** with `npx jpml-lang check data/*.jp`.
 
 ---
 

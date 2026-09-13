@@ -78,8 +78,8 @@ jobs:
           node dist/bin.js check data/*.jp
           node dist/bin.js to-json data/servers.example.jp
           node --input-type=module -e "
-            import { loadSync, dumps } from 'jpml';
-            import { loads } from 'jpml/core';
+            import { loadSync, dumps } from 'jpml-lang';
+            import { loads } from 'jpml-lang/core';
             const data = loadSync('data/servers.example.jp');
             if (JSON.stringify(loads(dumps(data)), (k, v) => typeof v === 'bigint' ? String(v) : v)
                 !== JSON.stringify(data, (k, v) => typeof v === 'bigint' ? String(v) : v)) process.exit(1);

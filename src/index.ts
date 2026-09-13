@@ -16,7 +16,7 @@
  * Typical use:
  *
  * ```ts
- * import * as jpml from "jpml";
+ * import * as jpml from "jpml-lang";
  *
  * const data = await jpml.load("data/servers.jp");       // -> object
  * await jpml.dump(data, "data/servers.jp");              // formatted, atomic write

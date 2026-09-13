@@ -1,7 +1,7 @@
 /**
- * The runtime-agnostic half of `jpml`: parsing and serialising strings, with
- * no filesystem access. Import `jpml/core` in browsers, workers and edge
- * runtimes; import `jpml` in Node, Bun or Deno for the file helpers and
+ * The runtime-agnostic half of `jpml-lang`: parsing and serialising strings,
+ * with no filesystem access. Import `jpml-lang/core` in browsers, workers and
+ * edge runtimes; import `jpml-lang` in Node, Bun or Deno for the file helpers and
  * {@link JPConfig}.
  *
  * @module

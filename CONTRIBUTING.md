@@ -17,7 +17,7 @@ published package targets Node 20+ and has no runtime dependencies.
 ```
 src/
 ├─ index.ts      public exports (Node, Bun, Deno)
-├─ core.ts       loads/dumps and types, no filesystem -- the "jpml/core" export
+├─ core.ts       loads/dumps and types, no filesystem -- the "jpml-lang/core" export
 ├─ errors.ts     JPError, JPDecodeError (with line/column), JPEncodeError
 ├─ scanner.ts    cursor, whitespace, comments, strings, bare tokens
 ├─ parser.ts     recursive-descent grammar
@@ -43,7 +43,7 @@ context sensitive — `[` opens a section header at the top level but an array
 everywhere a value is expected.
 
 Nothing reachable from `core.ts` may import a `node:` module, so that
-`jpml/core` keeps working in browsers.
+`jpml-lang/core` keeps working in browsers.
 
 ## Tests
 
@@ -75,7 +75,7 @@ and every release gets a provenance attestation.
    npm login
    npm publish --access public
    ```
-3. On <https://www.npmjs.com/package/jpml/access>, add a trusted publisher:
+3. On <https://www.npmjs.com/package/jpml-lang/access>, add a trusted publisher:
 
    | Field | Value |
    | --- | --- |
