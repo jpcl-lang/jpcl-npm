@@ -263,7 +263,7 @@ function formatNumber(value: number): string {
 }
 
 /**
- * Render a finite number exactly as jpml-py does, so both writers produce the
+ * Render a finite number exactly as jpcl-py does, so both writers produce the
  * same bytes: a whole number below 1e16 is written as an integer, anything else
  * as Python's `repr(float)` -- the shortest round-tripping digits, in
  * scientific notation when the exponent is below -4 or at least 16

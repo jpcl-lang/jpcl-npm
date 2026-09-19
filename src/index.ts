@@ -1,5 +1,5 @@
 /**
- * jpml -- a hybrid JSON/TOML configuration language.
+ * jpcl -- a hybrid JSON/TOML configuration language.
  *
  * `.jp` files use TOML-style `[SECTION]` headers at the top level and
  * JSON-style `{...}` / `[...]` structures inside them, with unquoted keys and
@@ -16,12 +16,12 @@
  * Typical use:
  *
  * ```ts
- * import * as jpml from "jpml-lang";
+ * import * as jpcl from "jpcl";
  *
- * const data = await jpml.load("data/servers.jp");       // -> object
- * await jpml.dump(data, "data/servers.jp");              // formatted, atomic write
+ * const data = await jpcl.load("data/servers.jp");       // -> object
+ * await jpcl.dump(data, "data/servers.jp");              // formatted, atomic write
  *
- * const cfg = await jpml.JPConfig.load("data/servers.jp");
+ * const cfg = await jpcl.JPConfig.load("data/servers.jp");
  * cfg.setPath("SERVER_ID.prefix", "!");
  * await cfg.save();
  * ```

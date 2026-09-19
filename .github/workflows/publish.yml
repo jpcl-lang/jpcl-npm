@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: npm
-      url: https://www.npmjs.com/package/jpml-lang
+      url: https://www.npmjs.com/package/jpcl
     permissions:
       id-token: write   # mints the OIDC token npm trusts
       contents: read

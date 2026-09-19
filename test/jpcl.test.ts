@@ -5,7 +5,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
-import * as jpml from "../src/index.js";
+import * as jpcl from "../src/index.js";
 import { JPConfig, JPDecodeError, JPEncodeError, JPError } from "../src/index.js";
 import { main, type CliIO } from "../src/cli.js";
 
@@ -39,7 +39,7 @@ const SAMPLE_DATA = {
 const temps: string[] = [];
 
 function tmpDir(): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "jpml-test-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "jpcl-test-"));
   temps.push(dir);
   return dir;
 }
@@ -62,11 +62,11 @@ function decodeError(fn: () => unknown): JPDecodeError {
 
 describe("reading", () => {
   test("parses the reference document", () => {
-    expect(jpml.loads(SAMPLE)).toEqual(SAMPLE_DATA);
+    expect(jpcl.loads(SAMPLE)).toEqual(SAMPLE_DATA);
   });
 
   test("empty value becomes null", () => {
-    expect(jpml.loads("[s]\na:,\nb:\nc: 1\n").s).toEqual({ a: null, b: null, c: 1 });
+    expect(jpcl.loads("[s]\na:,\nb:\nc: 1\n").s).toEqual({ a: null, b: null, c: 1 });
   });
 
   test("comments and blank lines are ignored", () => {
@@ -81,18 +81,18 @@ describe("reading", () => {
         c: [1, 2]  # inside, after a value
       }
     `;
-    expect(jpml.loads(text)).toEqual({ s: { a: 1, b: { c: [1, 2] } } });
+    expect(jpcl.loads(text)).toEqual({ s: { a: 1, b: { c: [1, 2] } } });
   });
 
   test("trailing commas are allowed", () => {
-    expect(jpml.loads("[s]\no: {a: 1, b: 2,}\nl: [1, 2, 3,]\n").s).toEqual({
+    expect(jpcl.loads("[s]\no: {a: 1, b: 2,}\nl: [1, 2, 3,]\n").s).toEqual({
       o: { a: 1, b: 2 },
       l: [1, 2, 3],
     });
   });
 
   test("repeated and leading commas are tolerated", () => {
-    expect(jpml.loads("[s]\no: {,a: 1,, b: 2,}\nl: [,1,,2,]\n").s).toEqual({
+    expect(jpcl.loads("[s]\no: {,a: 1,, b: 2,}\nl: [,1,,2,]\n").s).toEqual({
       o: { a: 1, b: 2 },
       l: [1, 2],
     });
@@ -100,11 +100,11 @@ describe("reading", () => {
 
   test("entries may be separated by newlines, commas or both", () => {
     const text = "[s]\no: {\n  a: 1\n  b: 2,\n  c: 3,\n}\nl: [\n  1\n  2,\n]\n";
-    expect(jpml.loads(text).s).toEqual({ o: { a: 1, b: 2, c: 3 }, l: [1, 2] });
+    expect(jpcl.loads(text).s).toEqual({ o: { a: 1, b: 2, c: 3 }, l: [1, 2] });
   });
 
   test("multiple keys per section keep order", () => {
-    expect(Object.keys(jpml.loads("[s]\nz: 1\na: 2\nm: 3\n").s as object)).toEqual(["z", "a", "m"]);
+    expect(Object.keys(jpcl.loads("[s]\nz: 1\na: 2\nm: 3\n").s as object)).toEqual(["z", "a", "m"]);
   });
 
   test("scalar types", () => {
@@ -127,7 +127,7 @@ describe("reading", () => {
       "notnum: 0xzz",
       "",
     ].join("\n");
-    expect(jpml.loads(text).s).toEqual({
+    expect(jpcl.loads(text).s).toEqual({
       i: 42,
       neg: -7,
       f: 3.5,
@@ -147,21 +147,21 @@ describe("reading", () => {
   });
 
   test("large integers keep every digit as bigint", () => {
-    const section = jpml.loads("[s]\nid: 111111111111111111\nsmall: 9007199254740991\n").s as any;
+    const section = jpcl.loads("[s]\nid: 111111111111111111\nsmall: 9007199254740991\n").s as any;
     expect(section.id).toBe(111111111111111111n);
     expect(section.small).toBe(9007199254740991);
   });
 
   test("integers option", () => {
-    expect((jpml.loads("[s]\na: 1\n", { integers: "bigint" }).s as any).a).toBe(1n);
-    expect((jpml.loads("[s]\na: 111111111111111111\n", { integers: "number" }).s as any).a).toBe(
+    expect((jpcl.loads("[s]\na: 1\n", { integers: "bigint" }).s as any).a).toBe(1n);
+    expect((jpcl.loads("[s]\na: 111111111111111111\n", { integers: "number" }).s as any).a).toBe(
       111111111111111111,
     );
-    expect(() => jpml.loads("", { integers: "nope" as any })).toThrow(RangeError);
+    expect(() => jpcl.loads("", { integers: "nope" as any })).toThrow(RangeError);
   });
 
   test("non-finite floats", () => {
-    const section = jpml.loads("[s]\na: inf\nb: -inf\nc: nan\nd: -Infinity\n").s as any;
+    const section = jpcl.loads("[s]\na: inf\nb: -inf\nc: nan\nd: -Infinity\n").s as any;
     expect(section.a).toBe(Infinity);
     expect(section.b).toBe(-Infinity);
     expect(section.c).toBeNaN();
@@ -170,69 +170,69 @@ describe("reading", () => {
 
   test("string escapes", () => {
     const text = String.raw`[s]` + "\n" + String.raw`a: "tab\there\nline \u00e9 \U0001F600 \"q\" \\"` + "\n";
-    expect((jpml.loads(text).s as any).a).toBe('tab\there\nline é 😀 "q" \\');
+    expect((jpcl.loads(text).s as any).a).toBe('tab\there\nline é 😀 "q" \\');
   });
 
   test("surrogate pair escape", () => {
-    expect((jpml.loads(String.raw`[s]` + "\n" + String.raw`a: "\ud83d\ude00"` + "\n").s as any).a).toBe("😀");
+    expect((jpcl.loads(String.raw`[s]` + "\n" + String.raw`a: "\ud83d\ude00"` + "\n").s as any).a).toBe("😀");
   });
 
   test("backslash-newline continues a string", () => {
-    expect((jpml.loads('[s]\na: "one \\\n     two"\n').s as any).a).toBe("one two");
+    expect((jpcl.loads('[s]\na: "one \\\n     two"\n').s as any).a).toBe("one two");
   });
 
   test("quoted keys allow any character", () => {
-    expect(jpml.loads('[s]\n"a b: c": 1\n').s).toEqual({ "a b: c": 1 });
+    expect(jpcl.loads('[s]\n"a b: c": 1\n').s).toEqual({ "a b: c": 1 });
   });
 
   test("keys before any header land at the root", () => {
-    expect(jpml.loads("version: 2\n\n[s]\na: 1\n")).toEqual({ version: 2, s: { a: 1 } });
+    expect(jpcl.loads("version: 2\n\n[s]\na: 1\n")).toEqual({ version: 2, s: { a: 1 } });
   });
 
   test("dotted headers nest", () => {
-    expect(jpml.loads("[a.b.c]\nx: 1\n\n[a.d]\ny: 2\n")).toEqual({
+    expect(jpcl.loads("[a.b.c]\nx: 1\n\n[a.d]\ny: 2\n")).toEqual({
       a: { b: { c: { x: 1 } }, d: { y: 2 } },
     });
   });
 
   test("quoted header segment is not split", () => {
-    expect(jpml.loads('["a.b"]\nx: 1\n')).toEqual({ "a.b": { x: 1 } });
+    expect(jpcl.loads('["a.b"]\nx: 1\n')).toEqual({ "a.b": { x: 1 } });
   });
 
   test("deeply nested containers", () => {
-    expect((jpml.loads("[s]\na: {b: [{c: [1, {d: 2}]}]}\n") as any).s.a.b[0].c[1].d).toBe(2);
+    expect((jpcl.loads("[s]\na: {b: [{c: [1, {d: 2}]}]}\n") as any).s.a.b[0].c[1].d).toBe(2);
   });
 
   test("empty containers", () => {
-    expect(jpml.loads("[s]\na: {}\nb: []\n").s).toEqual({ a: {}, b: [] });
+    expect(jpcl.loads("[s]\na: {}\nb: []\n").s).toEqual({ a: {}, b: [] });
   });
 
   test("empty document", () => {
-    expect(jpml.loads("")).toEqual({});
-    expect(jpml.loads("# just a comment\n\n")).toEqual({});
+    expect(jpcl.loads("")).toEqual({});
+    expect(jpcl.loads("# just a comment\n\n")).toEqual({});
   });
 
   test("empty section", () => {
-    expect(jpml.loads("[a]\n\n[b]\nx: 1\n")).toEqual({ a: {}, b: { x: 1 } });
+    expect(jpcl.loads("[a]\n\n[b]\nx: 1\n")).toEqual({ a: {}, b: { x: 1 } });
   });
 
   test("CRLF and BOM are handled", () => {
-    expect(jpml.loads("\ufeff[s]\r\na: 1\r\n")).toEqual({ s: { a: 1 } });
+    expect(jpcl.loads("\ufeff[s]\r\na: 1\r\n")).toEqual({ s: { a: 1 } });
   });
 
   test("__proto__ is an ordinary key", () => {
-    const data = jpml.loads("[s]\n__proto__: {polluted: true}\n") as any;
+    const data = jpcl.loads("[s]\n__proto__: {polluted: true}\n") as any;
     expect(Object.getPrototypeOf(data.s)).toBe(Object.prototype);
     expect(Object.keys(data.s)).toEqual(["__proto__"]);
     expect(({} as any).polluted).toBeUndefined();
   });
 
   test("keys that exist on Object.prototype are not duplicates", () => {
-    expect(jpml.loads("[toString]\nconstructor: 1\n")).toEqual({ toString: { constructor: 1 } } as any);
+    expect(jpcl.loads("[toString]\nconstructor: 1\n")).toEqual({ toString: { constructor: 1 } } as any);
   });
 
   test("parse is an alias of loads", () => {
-    expect(jpml.parse(SAMPLE)).toEqual(SAMPLE_DATA);
+    expect(jpcl.parse(SAMPLE)).toEqual(SAMPLE_DATA);
   });
 });
 
@@ -240,27 +240,27 @@ describe("reading", () => {
 
 describe("duplicate keys", () => {
   test("raise by default", () => {
-    expect(() => jpml.loads("[s]\na: 1\na: 2\n")).toThrow("duplicate key 'a'");
+    expect(() => jpcl.loads("[s]\na: 1\na: 2\n")).toThrow("duplicate key 'a'");
   });
 
   test("policies", () => {
     const text = "[s]\na: 1\na: 2\n";
-    expect((jpml.loads(text, { duplicateKeys: "first" }).s as any).a).toBe(1);
-    expect((jpml.loads(text, { duplicateKeys: "last" }).s as any).a).toBe(2);
+    expect((jpcl.loads(text, { duplicateKeys: "first" }).s as any).a).toBe(1);
+    expect((jpcl.loads(text, { duplicateKeys: "last" }).s as any).a).toBe(2);
   });
 
   test("duplicate section raises", () => {
-    expect(() => jpml.loads("[s]\na: 1\n\n[s]\nb: 2\n")).toThrow("section '[s]' is defined twice");
+    expect(() => jpcl.loads("[s]\na: 1\n\n[s]\nb: 2\n")).toThrow("section '[s]' is defined twice");
   });
 
   test("duplicate section merges under the last policy", () => {
-    expect(jpml.loads("[s]\na: 1\n\n[s]\nb: 2\n", { duplicateKeys: "last" })).toEqual({
+    expect(jpcl.loads("[s]\na: 1\n\n[s]\nb: 2\n", { duplicateKeys: "last" })).toEqual({
       s: { a: 1, b: 2 },
     });
   });
 
   test("invalid policy rejected", () => {
-    expect(() => jpml.loads("", { duplicateKeys: "nope" as any })).toThrow("duplicateKeys");
+    expect(() => jpcl.loads("", { duplicateKeys: "nope" as any })).toThrow("duplicateKeys");
   });
 });
 
@@ -282,11 +282,11 @@ describe("errors", () => {
     ["[s] junk\na: 1\n", "unexpected 'j' after section header"],
     ["version: 1\n[s.]\na: 1\n", "section header segment cannot be empty"],
   ])("syntax error in %j", (text, message) => {
-    expect(decodeError(() => jpml.loads(text)).rawMessage).toContain(message);
+    expect(decodeError(() => jpcl.loads(text)).rawMessage).toContain(message);
   });
 
   test("reports line, column and source", () => {
-    const error = decodeError(() => jpml.loads('[s]\nprefix "!"\n', { filename: "servers.jp" }));
+    const error = decodeError(() => jpcl.loads('[s]\nprefix "!"\n', { filename: "servers.jp" }));
     expect([error.line, error.col]).toEqual([2, 8]);
     expect(error.filename).toBe("servers.jp");
     expect(error.message).toBe(
@@ -297,11 +297,11 @@ describe("errors", () => {
   });
 
   test("section cannot shadow a scalar", () => {
-    expect(() => jpml.loads("a: 1\n\n[a.b]\nx: 1\n")).toThrow("already a non-section value");
+    expect(() => jpcl.loads("a: 1\n\n[a.b]\nx: 1\n")).toThrow("already a non-section value");
   });
 
   test("nesting depth is capped", () => {
-    expect(() => jpml.loads(`[s]\na: ${"[".repeat(500)}${"]".repeat(500)}\n`)).toThrow("nesting deeper than");
+    expect(() => jpcl.loads(`[s]\na: ${"[".repeat(500)}${"]".repeat(500)}\n`)).toThrow("nesting deeper than");
   });
 });
 
@@ -309,88 +309,88 @@ describe("errors", () => {
 
 describe("writing", () => {
   test("dumps matches the reference style", () => {
-    expect(jpml.dumps(SAMPLE_DATA)).toBe(SAMPLE);
+    expect(jpcl.dumps(SAMPLE_DATA)).toBe(SAMPLE);
   });
 
   test("round trip is stable", () => {
-    const once = jpml.dumps(jpml.loads(SAMPLE));
-    expect(jpml.dumps(jpml.loads(once))).toBe(once);
+    const once = jpcl.dumps(jpcl.loads(SAMPLE));
+    expect(jpcl.dumps(jpcl.loads(once))).toBe(once);
   });
 
   test("example data round-trips", () => {
     const text = fs.readFileSync(path.join(import.meta.dir, "../data/servers.example.jp"), "utf8");
-    const data = jpml.loads(text);
-    expect(jpml.loads(jpml.dumps(data))).toEqual(data);
+    const data = jpcl.loads(text);
+    expect(jpcl.loads(jpcl.dumps(data))).toEqual(data);
   });
 
   test("null is empty in objects and null in arrays", () => {
-    const text = jpml.dumps({ s: { a: null, b: [null, 1] } });
+    const text = jpcl.dumps({ s: { a: null, b: [null, 1] } });
     expect(text).toContain("a:\n");
     expect(text).toContain("b: [null, 1]");
-    expect(jpml.loads(text)).toEqual({ s: { a: null, b: [null, 1] } });
+    expect(jpcl.loads(text)).toEqual({ s: { a: null, b: [null, 1] } });
   });
 
   test("undefined is skipped in objects and null in arrays", () => {
-    expect(jpml.dumps({ s: { a: undefined, b: [undefined] } })).toBe("[s]\nb: [null]\n");
+    expect(jpcl.dumps({ s: { a: undefined, b: [undefined] } })).toBe("[s]\nb: [null]\n");
   });
 
   test("long arrays break onto multiple lines", () => {
     const ids = Array.from({ length: 30 }, (_, i) => i);
-    const text = jpml.dumps({ s: { ids } });
+    const text = jpcl.dumps({ s: { ids } });
     expect(text).toContain("ids: [\n");
-    expect((jpml.loads(text).s as any).ids).toEqual(ids);
+    expect((jpcl.loads(text).s as any).ids).toEqual(ids);
   });
 
   test("scalar roots are hoisted above sections", () => {
-    const text = jpml.dumps({ s: { a: 1 }, version: 2 });
+    const text = jpcl.dumps({ s: { a: 1 }, version: 2 });
     expect(text.indexOf("version: 2")).toBeLessThan(text.indexOf("[s]"));
-    expect(jpml.loads(text)).toEqual({ version: 2, s: { a: 1 } });
+    expect(jpcl.loads(text)).toEqual({ version: 2, s: { a: 1 } });
   });
 
   test("keys are quoted only when necessary", () => {
     const data = { "ok_key-1": { plain: 1, "needs quotes": 2, "": 3 } };
-    const text = jpml.dumps(data);
+    const text = jpcl.dumps(data);
     expect(text).toContain("[ok_key-1]");
     expect(text).toContain('"needs quotes": 2');
     expect(text).toContain('"": 3');
-    expect(jpml.loads(text)).toEqual(data);
+    expect(jpcl.loads(text)).toEqual(data);
   });
 
   test("Map keys may be integers", () => {
     const data = new Map<unknown, unknown>([[123, { a: 1 }], [456n, new Map([["b", 2]])]]);
-    expect(jpml.loads(jpml.dumps(data))).toEqual({ "123": { a: 1 }, "456": { b: 2 } });
-    expect(() => jpml.dumps(new Map([[{}, 1]]))).toThrow("keys must be strings");
+    expect(jpcl.loads(jpcl.dumps(data))).toEqual({ "123": { a: 1 }, "456": { b: 2 } });
+    expect(() => jpcl.dumps(new Map([[{}, 1]]))).toThrow("keys must be strings");
   });
 
   test("bigint round-trips", () => {
     const data = { s: { id: 111111111111111111n, ids: [222222222222222222n] } };
-    expect(jpml.loads(jpml.dumps(data))).toEqual(data);
+    expect(jpcl.loads(jpcl.dumps(data))).toEqual(data);
   });
 
   test("string values are escaped", () => {
     const value = 'quote " backslash \\ newline \n tab \t bell \x07 del \x7f';
-    expect((jpml.loads(jpml.dumps({ s: { a: value } })).s as any).a).toBe(value);
+    expect((jpcl.loads(jpcl.dumps({ s: { a: value } })).s as any).a).toBe(value);
   });
 
   test("ensureAscii option", () => {
-    expect(jpml.dumps({ s: { a: "é😀" } }, { ensureAscii: true })).toContain("\\u00e9\\ud83d\\ude00");
-    expect(jpml.dumps({ s: { a: "é" } })).toContain("é");
+    expect(jpcl.dumps({ s: { a: "é😀" } }, { ensureAscii: true })).toContain("\\u00e9\\ud83d\\ude00");
+    expect(jpcl.dumps({ s: { a: "é" } })).toContain("é");
   });
 
   test("indent and sortKeys options", () => {
-    const text = jpml.dumps({ s: { b: 1, a: { z: 1 } } }, { indent: 4, sortKeys: true });
+    const text = jpcl.dumps({ s: { b: 1, a: { z: 1 } } }, { indent: 4, sortKeys: true });
     expect(text.indexOf("a: {")).toBeLessThan(text.indexOf("b: 1"));
     expect(text).toContain("\n    z: 1");
   });
 
   test("width option", () => {
-    expect(jpml.dumps({ s: { a: [1, 2, 3] } }, { width: 8 })).toBe("[s]\na: [\n  1,\n  2,\n  3\n]\n");
+    expect(jpcl.dumps({ s: { a: [1, 2, 3] } }, { width: 8 })).toBe("[s]\na: [\n  1,\n  2,\n  3\n]\n");
   });
 
   test("floats and non-finite numbers", () => {
-    const text = jpml.dumps({ s: { a: 0.1, b: Infinity, c: -Infinity, d: NaN, e: 1e-7 } });
+    const text = jpcl.dumps({ s: { a: 0.1, b: Infinity, c: -Infinity, d: NaN, e: 1e-7 } });
     expect(text).toBe("[s]\na: 0.1\nb: inf\nc: -inf\nd: nan\ne: 1e-07\n");
-    const back = jpml.loads(text).s as any;
+    const back = jpcl.loads(text).s as any;
     expect(back.e).toBe(1e-7);
     expect(back.d).toBeNaN();
   });
@@ -405,53 +405,53 @@ describe("writing", () => {
     [1.5e300, "1.5e+300"],
     [-1e21, "-1e+21"],
   ])("numbers are formatted like Python's repr: %p", (value, expected) => {
-    const text = jpml.dumps({ s: { a: value } });
+    const text = jpcl.dumps({ s: { a: value } });
     expect(text).toBe(`[s]\na: ${expected}\n`);
-    expect((jpml.loads(text).s as any).a).toBe(value);
+    expect((jpcl.loads(text).s as any).a).toBe(value);
   });
 
   test("unserialisable type throws", () => {
-    expect(() => jpml.dumps({ s: { a: new Date(0) } })).toThrow(JPEncodeError);
-    expect(() => jpml.dumps({ s: { a: () => 1 } })).toThrow("not serialisable");
+    expect(() => jpcl.dumps({ s: { a: new Date(0) } })).toThrow(JPEncodeError);
+    expect(() => jpcl.dumps({ s: { a: () => 1 } })).toThrow("not serialisable");
   });
 
   test("default hook converts unknown types", () => {
-    const text = jpml.dumps(
+    const text = jpcl.dumps(
       { s: { when: new Date(Date.UTC(2026, 8, 12)) } },
       { default: (v) => (v as Date).toISOString().slice(0, 10) },
     );
-    expect((jpml.loads(text).s as any).when).toBe("2026-09-12");
+    expect((jpcl.loads(text).s as any).when).toBe("2026-09-12");
   });
 
   test("default hook must convert", () => {
-    expect(() => jpml.dumps({ s: { a: new Date(0) } }, { default: (v) => v })).toThrow("unconverted");
+    expect(() => jpcl.dumps({ s: { a: new Date(0) } }, { default: (v) => v })).toThrow("unconverted");
   });
 
   test("binary data is rejected with a hint", () => {
-    expect(() => jpml.dumps({ s: { a: new Uint8Array([1]) } })).toThrow("binary data");
+    expect(() => jpcl.dumps({ s: { a: new Uint8Array([1]) } })).toThrow("binary data");
   });
 
   test("circular reference is detected", () => {
     const section: Record<string, unknown> = {};
     section.self = section;
-    expect(() => jpml.dumps({ s: section })).toThrow("circular reference");
+    expect(() => jpcl.dumps({ s: section })).toThrow("circular reference");
   });
 
   test("shared (non-circular) references are fine", () => {
     const shared = [1, 2];
-    expect(jpml.dumps({ s: { a: shared, b: shared } })).toBe("[s]\na: [1, 2]\nb: [1, 2]\n");
+    expect(jpcl.dumps({ s: { a: shared, b: shared } })).toBe("[s]\na: [1, 2]\nb: [1, 2]\n");
   });
 
   test("top level must be an object", () => {
-    expect(() => jpml.dumps([1, 2])).toThrow("must be an object");
+    expect(() => jpcl.dumps([1, 2])).toThrow("must be an object");
   });
 
   test("dumps of empty document", () => {
-    expect(jpml.dumps({})).toBe("");
+    expect(jpcl.dumps({})).toBe("");
   });
 
   test("stringify is an alias of dumps", () => {
-    expect(jpml.stringify(SAMPLE_DATA)).toBe(SAMPLE);
+    expect(jpcl.stringify(SAMPLE_DATA)).toBe(SAMPLE);
   });
 });
 
@@ -462,53 +462,53 @@ describe("files", () => {
     const dir = tmpDir();
     const file = path.join(dir, "servers.jp");
     fs.writeFileSync(file, SAMPLE);
-    const data = await jpml.load(file);
+    const data = await jpcl.load(file);
     expect(data).toEqual(SAMPLE_DATA);
     const out = path.join(dir, "copy.jp");
-    await jpml.dump(data, out);
+    await jpcl.dump(data, out);
     expect(fs.readFileSync(out, "utf8")).toBe(SAMPLE);
   });
 
   test("sync variants and file URLs", () => {
     const dir = tmpDir();
     const url = new URL(`file:///${path.join(dir, "a.jp").replaceAll("\\", "/").replace(/^\//, "")}`);
-    jpml.dumpSync({ s: { a: 1 } }, url);
-    expect(jpml.loadSync(url)).toEqual({ s: { a: 1 } });
+    jpcl.dumpSync({ s: { a: 1 } }, url);
+    expect(jpcl.loadSync(url)).toEqual({ s: { a: 1 } });
   });
 
   test("dump is atomic and leaves no temp files", async () => {
     const dir = tmpDir();
-    await jpml.dump({ s: { a: 1 } }, path.join(dir, "a.jp"));
-    jpml.dumpSync({ s: { a: 2 } }, path.join(dir, "a.jp"));
+    await jpcl.dump({ s: { a: 1 } }, path.join(dir, "a.jp"));
+    jpcl.dumpSync({ s: { a: 2 } }, path.join(dir, "a.jp"));
     expect(fs.readdirSync(dir)).toEqual(["a.jp"]);
-    expect(jpml.loadSync(path.join(dir, "a.jp"))).toEqual({ s: { a: 2 } });
+    expect(jpcl.loadSync(path.join(dir, "a.jp"))).toEqual({ s: { a: 2 } });
   });
 
   test("failed encode leaves the existing file untouched", async () => {
     const dir = tmpDir();
     const file = path.join(dir, "a.jp");
     fs.writeFileSync(file, SAMPLE);
-    await expect(jpml.dump({ s: { a: Symbol() } }, file)).rejects.toThrow(JPEncodeError);
+    await expect(jpcl.dump({ s: { a: Symbol() } }, file)).rejects.toThrow(JPEncodeError);
     expect(fs.readFileSync(file, "utf8")).toBe(SAMPLE);
     expect(fs.readdirSync(dir)).toEqual(["a.jp"]);
   });
 
   test("non-atomic dump", async () => {
     const dir = tmpDir();
-    await jpml.dump({ s: { a: 1 } }, path.join(dir, "a.jp"), { atomic: false });
-    expect(jpml.loadSync(path.join(dir, "a.jp"))).toEqual({ s: { a: 1 } });
+    await jpcl.dump({ s: { a: 1 } }, path.join(dir, "a.jp"), { atomic: false });
+    expect(jpcl.loadSync(path.join(dir, "a.jp"))).toEqual({ s: { a: 1 } });
   });
 
   test("dump creates missing parent directories", async () => {
     const file = path.join(tmpDir(), "nested", "deep", "a.jp");
-    await jpml.dump({ s: { a: 1 } }, file);
-    expect(await jpml.load(file)).toEqual({ s: { a: 1 } });
+    await jpcl.dump({ s: { a: 1 } }, file);
+    expect(await jpcl.load(file)).toEqual({ s: { a: 1 } });
   });
 
   test("error from a file names the file", async () => {
     const file = path.join(tmpDir(), "broken.jp");
     fs.writeFileSync(file, "[s]\na 1\n");
-    await expect(jpml.load(file)).rejects.toThrow("broken.jp");
+    await expect(jpcl.load(file)).rejects.toThrow("broken.jp");
   });
 
   test("loadDir", async () => {
@@ -518,7 +518,7 @@ describe("files", () => {
     fs.writeFileSync(path.join(dir, "ignored.txt"), "nope");
     fs.mkdirSync(path.join(dir, "sub"));
     fs.writeFileSync(path.join(dir, "sub", "nested.jp"), "[n]\n");
-    for (const loaded of [await jpml.loadDir(dir), jpml.loadDirSync(dir)]) {
+    for (const loaded of [await jpcl.loadDir(dir), jpcl.loadDirSync(dir)]) {
       expect(Object.keys(loaded)).toEqual(["roles", "servers"]);
       expect(loaded.servers).toEqual(SAMPLE_DATA);
     }
@@ -530,22 +530,22 @@ describe("files", () => {
     fs.writeFileSync(path.join(dir, "guilds", "a.jp"), "[s]\nx: 1\n");
     fs.writeFileSync(path.join(dir, "top.jp"), "");
     const expected = { "guilds/a": { s: { x: 1 } }, top: {} };
-    expect(await jpml.loadDir(dir, { recursive: true })).toEqual(expected);
-    expect(jpml.loadDirSync(dir, { recursive: true })).toEqual(expected);
+    expect(await jpcl.loadDir(dir, { recursive: true })).toEqual(expected);
+    expect(jpcl.loadDirSync(dir, { recursive: true })).toEqual(expected);
   });
 
   test("loadDir pattern", () => {
     const dir = tmpDir();
     fs.writeFileSync(path.join(dir, "a.example.jp"), "");
     fs.writeFileSync(path.join(dir, "b.jp"), "");
-    expect(Object.keys(jpml.loadDirSync(dir, { pattern: "*.example.jp" }))).toEqual(["a.example"]);
-    expect(Object.keys(jpml.loadDirSync(dir, { pattern: "[!a]*" }))).toEqual(["b"]);
+    expect(Object.keys(jpcl.loadDirSync(dir, { pattern: "*.example.jp" }))).toEqual(["a.example"]);
+    expect(Object.keys(jpcl.loadDirSync(dir, { pattern: "[!a]*" }))).toEqual(["b"]);
   });
 
   test("loadDir on a missing directory", async () => {
     const missing = path.join(tmpDir(), "nope");
-    await expect(jpml.loadDir(missing)).rejects.toMatchObject({ code: "ENOTDIR" });
-    expect(() => jpml.loadDirSync(missing)).toThrow("no such config directory");
+    await expect(jpcl.loadDir(missing)).rejects.toMatchObject({ code: "ENOTDIR" });
+    expect(() => jpcl.loadDirSync(missing)).toThrow("no such config directory");
   });
 });
 
@@ -657,7 +657,7 @@ describe("JPConfig", () => {
     expect(config.toObject()).toEqual({});
     config.setPath("s.a", 1);
     expect(await config.save()).toBe(file);
-    expect(await jpml.load(file)).toEqual({ s: { a: 1 } });
+    expect(await jpcl.load(file)).toEqual({ s: { a: 1 } });
     expect(JPConfig.loadSync(path.join(tmpDir(), "x.jp"), { missingOk: true }).size).toBe(0);
   });
 
@@ -801,6 +801,6 @@ describe("cli", () => {
   test("help and version", () => {
     expect(run(["--help"]).out).toContain("from-json");
     expect(run(["fmt", "-h"]).out).toContain("--sort-keys");
-    expect(run(["--version"]).out).toBe(`jpml ${jpml.version}\n`);
+    expect(run(["--version"]).out).toBe(`jpcl ${jpcl.version}\n`);
   });
 });

@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "jpml-npm",
+      "name": "jpcl-npm",
       "devDependencies": {
         "@types/bun": "^1.4.2",
         "@types/node": "^26.5.1",

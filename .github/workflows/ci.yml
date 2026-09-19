@@ -40,7 +40,7 @@ jobs:
       - name: Build
         run: bun run build
 
-      # Note: 'jpml fmt' is deliberately not enforced here -- rewriting a file
+      # Note: 'jpcl fmt' is deliberately not enforced here -- rewriting a file
       # drops its comments, so formatting stays a manual choice.
       - name: Validate the bundled .jp files
         shell: bash
@@ -78,8 +78,8 @@ jobs:
           node dist/bin.js check data/*.jp
           node dist/bin.js to-json data/servers.example.jp
           node --input-type=module -e "
-            import { loadSync, dumps } from 'jpml-lang';
-            import { loads } from 'jpml-lang/core';
+            import { loadSync, dumps } from 'jpcl';
+            import { loads } from 'jpcl/core';
             const data = loadSync('data/servers.example.jp');
             if (JSON.stringify(loads(dumps(data)), (k, v) => typeof v === 'bigint' ? String(v) : v)
                 !== JSON.stringify(data, (k, v) => typeof v === 'bigint' ? String(v) : v)) process.exit(1);

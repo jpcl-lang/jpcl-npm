@@ -1,9 +1,9 @@
-# jpml-lang
+# jpcl
 
-JavaScript/TypeScript package for JPML
+JavaScript/TypeScript package for JPCL
 
-[![CI](https://github.com/jpml-lang/jpml-npm/actions/workflows/ci.yml/badge.svg)](https://github.com/jpml-lang/jpml-npm/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/jpml-lang)](https://www.npmjs.com/package/jpml-lang)
+[![CI](https://github.com/jpcl-lang/jpcl-npm/actions/workflows/ci.yml/badge.svg)](https://github.com/jpcl-lang/jpcl-npm/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/jpcl)](https://www.npmjs.com/package/jpcl)
 
 **A configuration language that borrows TOML's sections and JSON's nesting.**
 
@@ -27,7 +27,7 @@ modules: {
 ```
 
 ```ts
-import { load } from "jpml-lang";
+import { load } from "jpcl";
 
 await load("data/servers.jp");
 // {
@@ -36,7 +36,7 @@ await load("data/servers.jp");
 // }
 ```
 
-This is the JavaScript twin of [`jpml` on PyPI](https://github.com/jpml-lang/jpml-py):
+This is the JavaScript twin of [`jpcl` on PyPI](https://github.com/jpcl-lang/jpcl-py):
 the same format, the same error messages and the same writer, so a file written
 by one reads back unchanged in the other. (See [Round trips](#round-trips) for
 the two places JavaScript itself makes the output differ.)
@@ -62,13 +62,10 @@ messages, and a deterministic writer, so files stay stable when a program
 rewrites them.
 
 ```bash
-npm install jpml-lang     # or: bun add jpml-lang / pnpm add jpml-lang / yarn add jpml-lang
+npm install jpcl     # or: bun add jpcl / pnpm add jpcl / yarn add jpcl
 ```
 
 No runtime dependencies. Ships ESM with TypeScript types. Node 20+, Bun and Deno.
-
-The package is published as `jpml-lang` (npm reserves names that look like
-existing packages), but the command it installs is still `jpml`.
 
 ---
 
@@ -160,13 +157,13 @@ objects and arrays.
 ### Read and write files
 
 ```ts
-import * as jpml from "jpml-lang";
+import * as jpcl from "jpcl";
 
-const data = await jpml.load("data/servers.jp");   // -> object
-await jpml.dump(data, "data/servers.jp");          // formatted, atomic write
+const data = await jpcl.load("data/servers.jp");   // -> object
+await jpcl.dump(data, "data/servers.jp");          // formatted, atomic write
 
-const text = jpml.dumps(data);                     // -> string
-const again = jpml.loads(text);                    // -> object
+const text = jpcl.dumps(data);                     // -> string
+const again = jpcl.loads(text);                    // -> object
 ```
 
 Every file function has a synchronous twin — `loadSync`, `dumpSync`,
@@ -180,10 +177,10 @@ renamed into place, so a crash or a concurrent reader never sees half a config.
 Options worth knowing:
 
 ```ts
-jpml.loads(text, { duplicateKeys: "last" });      // "error" (default), "first", "last"
-jpml.loads(text, { integers: "bigint" });         // "auto" (default), "bigint", "number"
-jpml.dumps(data, { indent: 4, sortKeys: true });  // also: width, ensureAscii
-jpml.dumps(data, { default: (v) => (v instanceof Date ? v.toISOString() : String(v)) });
+jpcl.loads(text, { duplicateKeys: "last" });      // "error" (default), "first", "last"
+jpcl.loads(text, { integers: "bigint" });         // "auto" (default), "bigint", "number"
+jpcl.dumps(data, { indent: 4, sortKeys: true });  // also: width, ensureAscii
+jpcl.dumps(data, { default: (v) => (v instanceof Date ? v.toISOString() : String(v)) });
 ```
 
 ### Big numbers stay exact
@@ -194,7 +191,7 @@ parses to a `number` and one that doesn't parses to a `bigint`, so no digit is
 ever silently changed:
 
 ```ts
-jpml.loads("[s]\nsmall: 42\nid: 111111111111111111\n");
+jpcl.loads("[s]\nsmall: 42\nid: 111111111111111111\n");
 // { s: { small: 42, id: 111111111111111111n } }
 ```
 
@@ -207,7 +204,7 @@ get a `bigint` for every integer, or `integers: "number"` to always get a
 `JPConfig` is a map-like object that remembers the file it came from.
 
 ```ts
-import { JPConfig } from "jpml-lang";
+import { JPConfig } from "jpcl";
 
 const cfg = await JPConfig.load("data/servers.jp", { missingOk: true });
 
@@ -236,9 +233,9 @@ const cfg = await JPConfig.load("data/servers.jp", { indent: 4, sortKeys: true }
 ### Load a whole folder
 
 ```ts
-const config = await jpml.loadDir("data");            // { servers: {...}, roles: {...} }
-const guilds = await jpml.loadDir("data/guilds");     // { "1234567890": {...}, ... }
-const everything = await jpml.loadDir("data", { recursive: true });
+const config = await jpcl.loadDir("data");            // { servers: {...}, roles: {...} }
+const guilds = await jpcl.loadDir("data/guilds");     // { "1234567890": {...}, ... }
+const everything = await jpcl.loadDir("data", { recursive: true });
 ```
 
 Each file becomes one key, named after the file. Nested files are keyed by
@@ -266,22 +263,22 @@ By default a repeated key is an error rather than a silent overwrite; pass
 ### Work from the shell
 
 ```bash
-npx jpml-lang check data/*.jp                      # validate; non-zero exit on failure
-npx jpml-lang fmt -w data/servers.jp               # reformat in place
-npx jpml-lang get data/servers.jp SERVER_ID.prefix # read one value
-npx jpml-lang to-json data/servers.jp -o out.json
-npx jpml-lang from-json out.json -o data/servers.jp
+npx jpcl check data/*.jp                      # validate; non-zero exit on failure
+npx jpcl fmt -w data/servers.jp               # reformat in place
+npx jpcl get data/servers.jp SERVER_ID.prefix # read one value
+npx jpcl to-json data/servers.jp -o out.json
+npx jpcl from-json out.json -o data/servers.jp
 ```
 
 `-` reads stdin. Large integers survive `to-json` and `from-json` intact.
 
 ### In the browser
 
-`jpml-lang/core` is the same parser and writer without any filesystem access, for
+`jpcl/core` is the same parser and writer without any filesystem access, for
 browsers, workers and edge runtimes:
 
 ```ts
-import { loads, dumps, JPDecodeError } from "jpml-lang/core";
+import { loads, dumps, JPDecodeError } from "jpcl/core";
 ```
 
 ---
@@ -346,7 +343,7 @@ A few habits that save pain later:
    `"1234567890"`, which is how JavaScript stores object keys anyway.
 4. **Write through `JPConfig.save()`** rather than by hand, so an interrupted
    write cannot truncate a live config.
-5. **Validate in CI** with `npx jpml-lang check data/*.jp`.
+5. **Validate in CI** with `npx jpcl check data/*.jp`.
 
 ---
 

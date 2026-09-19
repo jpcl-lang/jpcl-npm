@@ -1,5 +1,5 @@
 /**
- * Command line interface: `jpml <command> [files]`.
+ * Command line interface: `jpcl <command> [files]`.
  *
  * ```
  * check      Validate .jp files and report the first error in each.
@@ -61,7 +61,7 @@ const FORMAT_HELP = `  --indent N      spaces per level (default 2)
 const COMMANDS: Record<string, Command> = {
   check: {
     help: "validate .jp files",
-    usage: `usage: jpml check [-q] files...
+    usage: `usage: jpcl check [-q] files...
 
   -q, --quiet     only report errors`,
     options: { quiet: { type: "boolean", short: "q" } },
@@ -83,7 +83,7 @@ const COMMANDS: Record<string, Command> = {
 
   fmt: {
     help: "reformat .jp files",
-    usage: `usage: jpml fmt [-w] [--indent N] [--width N] [--sort-keys] files...
+    usage: `usage: jpcl fmt [-w] [--indent N] [--width N] [--sort-keys] files...
 
   -w, --write     rewrite files in place
 ${FORMAT_HELP}`,
@@ -117,7 +117,7 @@ ${FORMAT_HELP}`,
 
   get: {
     help: "print one value by dotted path",
-    usage: `usage: jpml get [-r] file path
+    usage: `usage: jpcl get [-r] file path
 
   path            e.g. SERVER_ID.config.disabled_users
   -r, --raw       print strings unquoted`,
@@ -144,7 +144,7 @@ ${FORMAT_HELP}`,
 
   "to-json": {
     help: "convert .jp to JSON",
-    usage: `usage: jpml to-json [-o OUTPUT] [--indent N] file
+    usage: `usage: jpcl to-json [-o OUTPUT] [--indent N] file
 
   -o, --output    write to a file instead of stdout
   --indent N      spaces per level (default 2)`,
@@ -166,7 +166,7 @@ ${FORMAT_HELP}`,
 
   "from-json": {
     help: "convert JSON to .jp",
-    usage: `usage: jpml from-json [-o OUTPUT] [--indent N] [--width N] [--sort-keys] file
+    usage: `usage: jpcl from-json [-o OUTPUT] [--indent N] [--width N] [--sort-keys] file
 
   -o, --output    write to a file instead of stdout
 ${FORMAT_HELP}`,
@@ -190,7 +190,7 @@ ${FORMAT_HELP}`,
 
 const NAMES = Object.keys(COMMANDS);
 
-const MAIN_USAGE = `usage: jpml [-h] [--version] {${NAMES.join(",")}} ...
+const MAIN_USAGE = `usage: jpcl [-h] [--version] {${NAMES.join(",")}} ...
 
 Work with .jp configuration files.
 
@@ -203,14 +203,14 @@ options:
 `;
 
 /**
- * Run the `jpml` command with `argv` (without the `node` and script entries)
+ * Run the `jpcl` command with `argv` (without the `node` and script entries)
  * and return the exit code: `0` on success, `1` when a file fails, `2` for
  * invalid usage.
  */
 export function main(argv: readonly string[] = process.argv.slice(2), io: CliIO = processIO): number {
   const [name, ...rest] = argv;
   if (name === undefined) {
-    io.stderr(`${MAIN_USAGE.split("\n")[0]}\njpml: error: a command is required\n`);
+    io.stderr(`${MAIN_USAGE.split("\n")[0]}\njpcl: error: a command is required\n`);
     return 2;
   }
   if (name === "-h" || name === "--help") {
@@ -218,14 +218,14 @@ export function main(argv: readonly string[] = process.argv.slice(2), io: CliIO 
     return 0;
   }
   if (name === "--version") {
-    io.stdout(`jpml ${version}\n`);
+    io.stdout(`jpcl ${version}\n`);
     return 0;
   }
 
   const command = Object.hasOwn(COMMANDS, name) ? COMMANDS[name] : undefined;
   if (command === undefined) {
     io.stderr(
-      `${MAIN_USAGE.split("\n")[0]}\njpml: error: invalid command '${name}' (choose from ${NAMES.join(", ")})\n`,
+      `${MAIN_USAGE.split("\n")[0]}\njpcl: error: invalid command '${name}' (choose from ${NAMES.join(", ")})\n`,
     );
     return 2;
   }
@@ -248,7 +248,7 @@ export function main(argv: readonly string[] = process.argv.slice(2), io: CliIO 
       error instanceof UsageError ||
       (error as { code?: string }).code?.startsWith("ERR_PARSE_ARGS") === true;
     if (!known) throw error;
-    io.stderr(`${command.usage.split("\n")[0]}\njpml ${name}: error: ${(error as Error).message}\n`);
+    io.stderr(`${command.usage.split("\n")[0]}\njpcl ${name}: error: ${(error as Error).message}\n`);
     return 2;
   }
 }

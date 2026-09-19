@@ -25,7 +25,7 @@ function codePointLength(text: string): number {
   return count;
 }
 
-/** Base class for every error thrown by `jpml`. */
+/** Base class for every error thrown by `jpcl`. */
 export class JPError extends Error {
   override name = "JPError";
 }
