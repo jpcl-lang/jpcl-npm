@@ -1,5 +1,5 @@
 {
-  "name": "jpcl",
+  "name": "jpcl-lang",
   "version": "1.1.1",
   "description": "A hybrid JSON/TOML configuration language (.jp files)",
   "keywords": [
